@@ -1,13 +1,16 @@
 package main
 
-import( "fmt" 
-        "log" 
-		"encoding/json" 
-		// "math/rand" 
-		"net/http" 
-		// "strconv" 
-		"github.com/gorilla/mux"
-	)
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	// "maps"
+	"strconv"
+
+	// "math/rand"
+	"net/http"
+	"github.com/gorilla/mux"
+)
 
 type Movie struct {
      ID string `json:"id"`
@@ -37,7 +40,8 @@ func deleteMovie(w http.ResponseWriter , r *http.Request){
 		if item.ID == params["id"]{
 			movies = append(movies[:idx] , movies[idx+1:]...)
 			json.NewEncoder(w).Encode(map[string]string{"message": "Movie deleted successfully"})
-			break
+			// json.NewDecoder(w).Encode()
+			return
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)
@@ -57,6 +61,39 @@ func getMovie(w http.ResponseWriter , r *http.Request){
 	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(map[string]string{"error" : "Movie not found"})
 }
+
+func generateIsbn(id string) string {
+	return id + id + id + id + id
+}
+func createMovie(w http.ResponseWriter , r *http.Request){
+	w.Header().Set("Content-Type" , "application/json")
+	var movie Movie 
+	err := json.NewDecoder(r.Body).Decode(&movie)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"message" : "invalid request body"})
+		return
+	}
+
+	maxId := 0
+	for _ , m := range movies {
+		id , err := strconv.Atoi(m.ID)
+		if err != nil {
+			continue
+		}
+		if id > maxId {
+			maxId = id
+		}
+	}
+
+	newId := strconv.Itoa(maxId + 1)
+	movie.ID = newId
+	movie.Isbn = generateIsbn(newId)
+	movies = append(movies , movie)
+
+	json.NewEncoder(w).Encode(movie)
+}
+
 
 func main(){
 
@@ -94,7 +131,7 @@ func main(){
 
 	r := mux.NewRouter()
 
-	// r.HandleFunc("/movies/", createMovie).Methods("POST")
+	r.HandleFunc("/movies", createMovie).Methods("POST")
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
 	// r.HandleFunc("/movies/{id}", updateMovie).Methods("PATCH")
