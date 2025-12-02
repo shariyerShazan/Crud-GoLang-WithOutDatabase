@@ -25,10 +25,24 @@ var movies []Movie
 
 
 func getMovies(w http.ResponseWriter , r *http.Request){
-   w.Header().Set("content-Type", "application/json")
+   w.Header().Set("Content-Type", "application/json")
    json.NewEncoder(w).Encode(movies)
 }
 
+
+func deleteMovie(w http.ResponseWriter , r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for idx , item := range movies {
+		if item.ID == params["id"]{
+			movies = append(movies[:idx] , movies[idx+1:]...)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Movie deleted successfully"})
+			break
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "Movie not found"})
+}
 
 func main(){
 
@@ -70,7 +84,7 @@ func main(){
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	// r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
 	// r.HandleFunc("/movies/{id}", updateMovie).Methods("PATCH")
-	// r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
+	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
 	fmt.Printf("Server is running at port: 3333\n")
 	log.Fatal(http.ListenAndServe(":3333" , r) )
