@@ -44,6 +44,20 @@ func deleteMovie(w http.ResponseWriter , r *http.Request){
 	json.NewEncoder(w).Encode(map[string]string{"error": "Movie not found"})
 }
 
+
+func getMovie(w http.ResponseWriter , r *http.Request){
+	w.Header().Set("Content-Type" , "application/json")
+	params := mux.Vars(r)
+	for _ , item := range movies {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error" : "Movie not found"})
+}
+
 func main(){
 
 	//! appends movies
@@ -82,7 +96,7 @@ func main(){
 
 	// r.HandleFunc("/movies/", createMovie).Methods("POST")
 	r.HandleFunc("/movies", getMovies).Methods("GET")
-	// r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
+	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
 	// r.HandleFunc("/movies/{id}", updateMovie).Methods("PATCH")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
