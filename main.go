@@ -27,12 +27,14 @@ type Director struct {
 var movies []Movie
 
 
+//! GET ALL
 func getMovies(w http.ResponseWriter , r *http.Request){
    w.Header().Set("Content-Type", "application/json")
    json.NewEncoder(w).Encode(movies)
 }
 
 
+//! DELETE ONE
 func deleteMovie(w http.ResponseWriter , r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
@@ -49,6 +51,7 @@ func deleteMovie(w http.ResponseWriter , r *http.Request){
 }
 
 
+//! GET SINGLE
 func getMovie(w http.ResponseWriter , r *http.Request){
 	w.Header().Set("Content-Type" , "application/json")
 	params := mux.Vars(r)
@@ -62,6 +65,9 @@ func getMovie(w http.ResponseWriter , r *http.Request){
 	json.NewEncoder(w).Encode(map[string]string{"error" : "Movie not found"})
 }
 
+
+
+//! POST
 func generateIsbn(id string) string {
 	return id + id + id + id + id
 }
@@ -95,8 +101,49 @@ func createMovie(w http.ResponseWriter , r *http.Request){
 }
 
 
-func main(){
+//! PATCH ONE
+func updateMovie(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
 
+	var updatedData Movie
+	err := json.NewDecoder(r.Body).Decode(&updatedData)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+		return
+	}
+
+	for idx, item := range movies {
+		if item.ID == params["id"] {
+
+			// Only update fields that are provided
+			if updatedData.Title != "" {
+				movies[idx].Title = updatedData.Title
+			}
+
+			if updatedData.Director != nil {
+				if updatedData.Director.FullName != "" {
+					movies[idx].Director.FullName = updatedData.Director.FullName
+				}
+				if updatedData.Director.Email != "" {
+					movies[idx].Director.Email = updatedData.Director.Email
+				}
+			}
+
+			json.NewEncoder(w).Encode(movies[idx])
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "Movie not found"})
+}
+
+
+
+
+func main(){
 	//! appends movies
 		movies = append(movies, Movie{
 		ID:   "1",
@@ -134,7 +181,7 @@ func main(){
 	r.HandleFunc("/movies", createMovie).Methods("POST")
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
-	// r.HandleFunc("/movies/{id}", updateMovie).Methods("PATCH")
+	r.HandleFunc("/movies/{id}", updateMovie).Methods("PATCH")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
 	fmt.Printf("Server is running at port: 3333\n")
